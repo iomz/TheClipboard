@@ -14,7 +14,7 @@ import Foundation
         precondition(bundle.bundleIdentifier == "com.iomz.TheClipboard")
         precondition(bundle.object(forInfoDictionaryKey: "CFBundleExecutable") as? String == "TheClipboard")
         let about = AboutInformation(bundle: bundle)
-        precondition(about.applicationName == "The Clipboard" && about.version == "0.4.1" && about.build == "6")
+        precondition(about.applicationName == "The Clipboard" && about.version == "0.4.2" && about.build == "7")
         let domain = "com.iomz.TheClipboard.Test.Identity.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: domain)!
         defer { defaults.removePersistentDomain(forName: domain) }
