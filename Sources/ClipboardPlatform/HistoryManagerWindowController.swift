@@ -11,7 +11,8 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
     private let onWindowVisibilityChanged: (Bool) -> Void
     private let searchField = NSSearchField()
     private let scopeControl = NSSegmentedControl(labels: ["All", "Favorites"], trackingMode: .selectOne, target: nil, action: nil)
-    private let tableView = NSTableView()
+    private let tableView = HistoryManagerTableView()
+    private let storageLabel = NSTextField(labelWithString: "")
     private let emptyLabel = NSTextField(wrappingLabelWithString: "")
     private let previewView = NSTextView()
     private let detailPreviewImage = ManagerPreviewImageView()
@@ -26,6 +27,9 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
     private let deleteButton = NSButton(title: "Delete", target: nil, action: nil)
     private var entries: [ClipboardEntry] = []
     private var selectedEntryID: UUID?
+    /// Row to select after a deletion so repeated Delete walks the list
+    /// instead of jumping back to the top.
+    private var rowAfterDeletion: Int?
     private var historyObserver: NSObjectProtocol?
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -106,6 +110,7 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
         tableView.delegate = self
         tableView.target = self
         tableView.action = #selector(selectionChanged)
+        tableView.onDelete = { [weak self] in self?.deleteSelected() }
         let listScroll = NSScrollView()
         listScroll.documentView = tableView
         listScroll.hasVerticalScroller = true
@@ -138,10 +143,17 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
         split.addArrangedSubview(detailPane)
         listPane.widthAnchor.constraint(greaterThanOrEqualToConstant: 360).isActive = true
 
+        storageLabel.font = .systemFont(ofSize: 11)
+        storageLabel.textColor = .secondaryLabelColor
+        storageLabel.lineBreakMode = .byTruncatingTail
+        storageLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        storageLabel.setAccessibilityLabel("History storage usage")
+
         let header = NSStackView(views: [searchField, scopeControl])
         header.orientation = .horizontal
         header.alignment = .centerY
         header.spacing = 12
+        header.addView(storageLabel, in: .trailing)
         header.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(header)
         content.addSubview(split)
@@ -257,6 +269,8 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
         let entry = entries[row]
         let cell = HistoryManagerRowCell()
         cell.configureFavorite(entry.isFavorite)
+        cell.favoriteIndicator.target = self
+        cell.favoriteIndicator.action = #selector(toggleRowFavorite(_:))
         let sourceImage = NSImageView()
         sourceImage.translatesAutoresizingMaskIntoConstraints = false
         sourceImage.imageScaling = .scaleProportionallyUpOrDown
@@ -314,6 +328,8 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
     private func reloadEntries(preservingSelection: Bool = false) {
         let previousID = preservingSelection ? selectedEntryID : nil
         let previousRow = tableView.selectedRow
+        let fallbackRow = rowAfterDeletion ?? 0
+        rowAfterDeletion = nil
         let searched = history.search(searchField.stringValue)
         entries = scopeControl.selectedSegment == 1 ? searched.filter(\.isFavorite) : searched
         tableView.reloadData()
@@ -321,19 +337,29 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
             ? "Your saved clips will appear here."
             : (scopeControl.selectedSegment == 1 && searchField.stringValue.isEmpty ? "No favorite items yet." : "No items match your search.")
         emptyLabel.isHidden = !entries.isEmpty
+        updateStorageLabel()
         if let previousID, let index = entries.firstIndex(where: { $0.id == previousID }) {
             tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
             selectedEntryID = previousID
             setDetail(entries[index])
             if index != previousRow { tableView.scrollRowToVisible(index) }
         } else if !entries.isEmpty {
-            tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
-            selectedEntryID = entries[0].id
-            setDetail(entries[0])
+            let index = min(fallbackRow, entries.count - 1)
+            tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+            selectedEntryID = entries[index].id
+            setDetail(entries[index])
+            if index != 0 { tableView.scrollRowToVisible(index) }
         } else {
             selectedEntryID = nil
             setDetail(nil)
         }
+    }
+
+    /// Totals cover the whole library, not the current search/scope filter.
+    private func updateStorageLabel() {
+        let usage = history.storageUsage()
+        let size = ByteCountFormatter.string(fromByteCount: Int64(usage.byteCount), countStyle: .file)
+        storageLabel.stringValue = "\(usage.entryCount) \(usage.entryCount == 1 ? "item" : "items") · \(size)"
     }
 
     private func setDetail(_ entry: ClipboardEntry?) {
@@ -389,6 +415,15 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
         catch { onFeedback("Could not update favorite") }
     }
 
+    /// Row star acts on its own row's entry, independent of the selection.
+    @objc private func toggleRowFavorite(_ sender: NSButton) {
+        let row = tableView.row(for: sender)
+        guard entries.indices.contains(row) else { return }
+        let entry = entries[row]
+        do { try history.setFavorite(!entry.isFavorite, for: entry.id) }
+        catch { onFeedback("Could not update favorite") }
+    }
+
     @objc private func copyRich() { copy(plainTextOnly: false) }
     @objc private func copyPlain() { copy(plainTextOnly: true) }
 
@@ -405,13 +440,31 @@ public final class HistoryManagerWindowController: NSWindowController, NSWindowD
 
     @objc private func deleteSelected() {
         guard let entry = selectedEntry else { return }
+        rowAfterDeletion = tableView.selectedRow >= 0 ? tableView.selectedRow : nil
         do { try history.remove(id: entry.id) }
-        catch { onFeedback("Could not delete history item") }
+        catch { rowAfterDeletion = nil; onFeedback("Could not delete history item") }
+    }
+}
+
+/// Delete/Forward Delete remove the selected entry; other keys keep table behavior.
+final class HistoryManagerTableView: NSTableView {
+    var onDelete: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        let deleteKeys: Set<UInt16> = [51, 117] // kVK_Delete, kVK_ForwardDelete
+        if deleteKeys.contains(event.keyCode),
+           event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting([.function, .numericPad]).isEmpty,
+           selectedRow >= 0 {
+            onDelete?()
+            return
+        }
+        super.keyDown(with: event)
     }
 }
 
 final class HistoryManagerRowCell: NSTableCellView {
-    let favoriteIndicator = NSImageView()
+    /// Clickable star: filled for favorites, outlined otherwise.
+    let favoriteIndicator = NSButton()
 
     override var backgroundStyle: NSView.BackgroundStyle {
         didSet { updateFavoriteTint() }
@@ -419,16 +472,28 @@ final class HistoryManagerRowCell: NSTableCellView {
 
     func configureFavorite(_ isFavorite: Bool) {
         favoriteIndicator.translatesAutoresizingMaskIntoConstraints = false
-        favoriteIndicator.image = NSImage(systemSymbolName: "star.fill", accessibilityDescription: "Favorite")
-        favoriteIndicator.isHidden = !isFavorite
-        favoriteIndicator.setAccessibilityElement(isFavorite)
-        favoriteIndicator.setAccessibilityLabel("Favorite")
+        favoriteIndicator.isBordered = false
+        favoriteIndicator.title = ""
+        favoriteIndicator.imagePosition = .imageOnly
+        favoriteIndicator.imageScaling = .scaleProportionallyUpOrDown
+        favoriteIndicator.setButtonType(.toggle)
+        favoriteIndicator.state = isFavorite ? .on : .off
+        favoriteIndicator.image = NSImage(
+            systemSymbolName: isFavorite ? "star.fill" : "star",
+            accessibilityDescription: isFavorite ? "Favorite" : "Not favorite"
+        )
+        favoriteIndicator.alternateImage = nil
+        favoriteIndicator.setAccessibilityLabel(isFavorite ? "Remove from favorites" : "Add to favorites")
+        favoriteIndicator.toolTip = isFavorite ? "Remove from favorites" : "Add to favorites"
         updateFavoriteTint()
     }
 
     private func updateFavoriteTint() {
-        favoriteIndicator.contentTintColor = backgroundStyle == .emphasized
-            ? .alternateSelectedControlTextColor : .secondaryLabelColor
+        if backgroundStyle == .emphasized {
+            favoriteIndicator.contentTintColor = .alternateSelectedControlTextColor
+        } else {
+            favoriteIndicator.contentTintColor = favoriteIndicator.state == .on ? .secondaryLabelColor : .tertiaryLabelColor
+        }
     }
 }
 
