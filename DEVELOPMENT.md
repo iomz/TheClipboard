@@ -2,7 +2,7 @@
 
 ## Identity
 
-The Clipboard v0.4.1/build 6 uses bundle identifier `com.iomz.TheClipboard`, executable/product/target `TheClipboard`, and bundle `The Clipboard.app`. SwiftPM application sources live in `Sources/TheClipboard`; `ClipboardCore` and `ClipboardPlatform` are shared implementation modules. History model is `ClipboardLibrary`; its change notification is `clipboardLibraryDidChange` with name `TheClipboard.didChange`. Canonical hashes use `TheClipboard\0canonical-v1\0`.
+The Clipboard v0.4.2/build 7 uses bundle identifier `com.iomz.TheClipboard`, executable/product/target `TheClipboard`, and bundle `The Clipboard.app`. SwiftPM application sources live in `Sources/TheClipboard`; `ClipboardCore` and `ClipboardPlatform` are shared implementation modules. History model is `ClipboardLibrary`; its change notification is `clipboardLibraryDidChange` with name `TheClipboard.didChange`. Canonical hashes use `TheClipboard\0canonical-v1\0`.
 
 Storage is `~/Library/Application Support/TheClipboard/Entries`; app and Sparkle preferences use the new bundle's UserDefaults domain. No migration, fallback, aliases, preference copying or automatic removal of other installations/data. Accessibility authorization must be granted to The Clipboard. The application identity is independent of any other installation.
 

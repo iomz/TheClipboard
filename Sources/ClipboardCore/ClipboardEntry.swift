@@ -65,6 +65,13 @@ public struct ClipboardEntry: Codable, Equatable, Identifiable, Sendable {
         self.canonicalIdentity = Self.identity(for: pasteboardItems)
     }
 
+    /// Bytes of captured pasteboard payloads, excluding metadata and filesystem overhead.
+    public var payloadByteCount: Int {
+        pasteboardItems.reduce(0) { total, item in
+            total + item.representations.reduce(0) { $0 + $1.data.count }
+        }
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, firstCapturedAt, lastCapturedAt, lastUsedAt, sourceApplication, isFavorite
         case pasteboardItems, plainText, canonicalIdentity
@@ -278,6 +285,11 @@ public final class ClipboardLibrary {
             lock.unlock()
             throw error
         }
+    }
+
+    public func storageUsage() -> (entryCount: Int, byteCount: Int) {
+        lock.lock(); defer { lock.unlock() }
+        return (entries.count, entries.reduce(0) { $0 + $1.payloadByteCount })
     }
 
     public func search(_ query: String) -> [ClipboardEntry] {
