@@ -2,7 +2,7 @@
 
 ## Identity
 
-The Clipboard v0.4.2/build 7 uses bundle identifier `com.iomz.TheClipboard`, executable/product/target `TheClipboard`, and bundle `The Clipboard.app`. SwiftPM application sources live in `Sources/TheClipboard`; `ClipboardCore` and `ClipboardPlatform` are shared implementation modules. History model is `ClipboardLibrary`; its change notification is `clipboardLibraryDidChange` with name `TheClipboard.didChange`. Canonical hashes use `TheClipboard\0canonical-v1\0`.
+The Clipboard v0.5.0/build 7 uses bundle identifier `com.iomz.TheClipboard`, executable/product/target `TheClipboard`, and bundle `The Clipboard.app`. SwiftPM application sources live in `Sources/TheClipboard`; `ClipboardCore` and `ClipboardPlatform` are shared implementation modules. History model is `ClipboardLibrary`; its change notification is `clipboardLibraryDidChange` with name `TheClipboard.didChange`. Canonical hashes use `TheClipboard\0canonical-v1\0`.
 
 Storage is `~/Library/Application Support/TheClipboard/Entries`; app and Sparkle preferences use the new bundle's UserDefaults domain. No migration, fallback, aliases, preference copying or automatic removal of other installations/data. Accessibility authorization must be granted to The Clipboard. The application identity is independent of any other installation.
 
@@ -22,14 +22,19 @@ Scripts/test-icon.sh
 Scripts/test-finder-icon.sh
 Scripts/test-application-icons.sh
 Scripts/test-distribution.sh
-Scripts/test-signing-identity.sh "build/releases/TheClipboard/0.4.1/The Clipboard.app"
+Scripts/test-signing-identity.sh "build/releases/TheClipboard/0.5.0/The Clipboard.app"
 Scripts/package-dmg.sh
 Scripts/test-dmg.sh
 # Only after authorized signing-account provisioning:
-Scripts/verify-sparkle-key.sh "build/releases/TheClipboard/0.4.1/The Clipboard.app"
-Scripts/generate-appcast.sh build/releases/TheClipboard/0.4.0/appcast.xml
+Scripts/verify-sparkle-key.sh "build/releases/TheClipboard/0.5.0/The Clipboard.app"
+# build/ is disposable; restore previous feed and its archives from published sources:
+mkdir -p build/update-archives/TheClipboard build/releases/TheClipboard/0.4.1
+gh release download v0.4.0 -p 'TheClipboard-*.dmg' -D build/update-archives/TheClipboard
+gh release download v0.4.1 -p 'TheClipboard-*.dmg' -D build/update-archives/TheClipboard
+git show origin/gh-pages:appcast.xml > build/releases/TheClipboard/0.4.1/appcast.xml
+Scripts/generate-appcast.sh build/releases/TheClipboard/0.4.1/appcast.xml
 Scripts/prepare-pages.sh
-swift Tests/AppcastMergeChecks.swift Scripts/merge-appcast.swift build/releases/TheClipboard/0.4.1/appcast.xml
+swift Tests/AppcastMergeChecks.swift Scripts/merge-appcast.swift build/releases/TheClipboard/0.5.0/appcast.xml
 python3 Scripts/audit-identity.py
 git diff --check
 ```
@@ -88,7 +93,7 @@ Recovery on another Mac requires separate authorization and the existing Bitward
 
 Repository/feed references exclusively target `github.com/iomz/TheClipboard` and `https://iomz.github.io/TheClipboard/appcast.xml`. Changing the Git remote requires owner authorization. First feed contains only this application's build 5; previous-feed preflight rejects other repository release URLs. HTTPS XML is not itself signed; DMG enclosures carry EdDSA signatures.
 
-Candidate release folder: `build/releases/TheClipboard/0.4.1`; archive folder: `build/update-archives/TheClipboard`; candidate Pages payload: `build/pages/TheClipboard/0.4.1`. Release/tag retention and preservation of existing published endpoints/assets require separate owner decisions. GitHub project Pages redirects must not be assumed when renaming a repository. Release DMG must exist before publishing new feed. Root `LICENSE` is MIT, copyright 2026 Iori Mizutani; bundled Sparkle retains its separate attribution. No application CI workflow or public product screenshot is present.
+Candidate release folder: `build/releases/TheClipboard/0.5.0`; archive folder: `build/update-archives/TheClipboard`; candidate Pages payload: `build/pages/TheClipboard/0.5.0`. Everything under `build/` is disposable: published DMGs live on GitHub Releases and the published feed on `gh-pages`, so restore them from there rather than retaining local copies. Release/tag retention and preservation of existing published endpoints/assets require separate owner decisions. GitHub project Pages redirects must not be assumed when renaming a repository. Release DMG must exist before publishing new feed. Root `LICENSE` is MIT, copyright 2026 Iori Mizutani; bundled Sparkle retains its separate attribution. No application CI workflow or public product screenshot is present.
 
 Owner authorized first publication on 2026-10-09 after repository rename. Tag `v0.4.0` targets approved implementation `bf0b42db6881c53a51a105080b1530a1b657e697`. Public DMG SHA-256 is `0fa08da8b2423fc38ece147c7f970487de5ac9b05d59a036d06eb2471fcd9015`; downloaded bytes matched locally. HTTPS appcast contains only build 5; enclosure size, URL, EdDSA signature and tamper rejection passed. Pages deploys from `gh-pages` root with HTTPS enforced. This records publication verification, not a successful future update installation or trusted notarized distribution.
 
