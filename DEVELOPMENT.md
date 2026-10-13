@@ -2,7 +2,7 @@
 
 ## Identity
 
-The Clipboard v0.5.0/build 7 uses bundle identifier `com.iomz.TheClipboard`, executable/product/target `TheClipboard`, and bundle `The Clipboard.app`. SwiftPM application sources live in `Sources/TheClipboard`; `ClipboardCore` and `ClipboardPlatform` are shared implementation modules. History model is `ClipboardLibrary`; its change notification is `clipboardLibraryDidChange` with name `TheClipboard.didChange`. Canonical hashes use `TheClipboard\0canonical-v1\0`.
+The Clipboard v0.6.0/build 8 uses bundle identifier `com.iomz.TheClipboard`, executable/product/target `TheClipboard`, and bundle `The Clipboard.app`. SwiftPM application sources live in `Sources/TheClipboard`; `ClipboardCore` and `ClipboardPlatform` are shared implementation modules. History model is `ClipboardLibrary`; its change notification is `clipboardLibraryDidChange` with name `TheClipboard.didChange`. Canonical hashes use `TheClipboard\0canonical-v1\0`.
 
 Storage is `~/Library/Application Support/TheClipboard/Entries`; app and Sparkle preferences use the new bundle's UserDefaults domain. No migration, fallback, aliases, preference copying or automatic removal of other installations/data. Accessibility authorization must be granted to The Clipboard. The application identity is independent of any other installation.
 
@@ -22,19 +22,21 @@ Scripts/test-icon.sh
 Scripts/test-finder-icon.sh
 Scripts/test-application-icons.sh
 Scripts/test-distribution.sh
-Scripts/test-signing-identity.sh "build/releases/TheClipboard/0.5.0/The Clipboard.app"
+Scripts/test-signing-identity.sh "build/releases/TheClipboard/0.6.0/The Clipboard.app"
 Scripts/package-dmg.sh
 Scripts/test-dmg.sh
 # Only after authorized signing-account provisioning:
-Scripts/verify-sparkle-key.sh "build/releases/TheClipboard/0.5.0/The Clipboard.app"
+Scripts/verify-sparkle-key.sh "build/releases/TheClipboard/0.6.0/The Clipboard.app"
 # build/ is disposable; restore previous feed and its archives from published sources:
-mkdir -p build/update-archives/TheClipboard build/releases/TheClipboard/0.4.1
+mkdir -p build/update-archives/TheClipboard build/validation/release-0.6.0
 gh release download v0.4.0 -p 'TheClipboard-*.dmg' -D build/update-archives/TheClipboard
 gh release download v0.4.1 -p 'TheClipboard-*.dmg' -D build/update-archives/TheClipboard
-git show origin/gh-pages:appcast.xml > build/releases/TheClipboard/0.4.1/appcast.xml
-Scripts/generate-appcast.sh build/releases/TheClipboard/0.4.1/appcast.xml
+gh release download v0.5.0 -p 'TheClipboard-*.dmg' -D build/update-archives/TheClipboard
+git fetch origin gh-pages
+git show origin/gh-pages:appcast.xml > build/validation/release-0.6.0/previous-appcast.xml
+Scripts/generate-appcast.sh build/validation/release-0.6.0/previous-appcast.xml
 Scripts/prepare-pages.sh
-swift Tests/AppcastMergeChecks.swift Scripts/merge-appcast.swift build/releases/TheClipboard/0.5.0/appcast.xml
+swift Tests/AppcastMergeChecks.swift Scripts/merge-appcast.swift build/releases/TheClipboard/0.6.0/appcast.xml
 python3 Scripts/audit-identity.py
 git diff --check
 ```
@@ -95,7 +97,7 @@ Recovery on another Mac requires separate authorization and the existing Bitward
 
 Repository/feed references exclusively target `github.com/iomz/TheClipboard` and `https://iomz.github.io/TheClipboard/appcast.xml`. Changing the Git remote requires owner authorization. First feed contains only this application's build 5; previous-feed preflight rejects other repository release URLs. HTTPS XML is not itself signed; DMG enclosures carry EdDSA signatures.
 
-Candidate release folder: `build/releases/TheClipboard/0.5.0`; archive folder: `build/update-archives/TheClipboard`; candidate Pages payload: `build/pages/TheClipboard/0.5.0`. Everything under `build/` is disposable: published DMGs live on GitHub Releases and the published feed on `gh-pages`, so restore them from there rather than retaining local copies. Release/tag retention and preservation of existing published endpoints/assets require separate owner decisions. GitHub project Pages redirects must not be assumed when renaming a repository. Release DMG must exist before publishing new feed. Root `LICENSE` is MIT, copyright 2026 Iori Mizutani; bundled Sparkle retains its separate attribution. No application CI workflow or public product screenshot is present.
+Candidate release folder: `build/releases/TheClipboard/0.6.0`; archive folder: `build/update-archives/TheClipboard`; candidate Pages payload: `build/pages/TheClipboard/0.6.0`. Everything under `build/` is disposable: published DMGs live on GitHub Releases and the published feed on `gh-pages`, so restore them from there rather than retaining local copies. Release/tag retention and preservation of existing published endpoints/assets require separate owner decisions. GitHub project Pages redirects must not be assumed when renaming a repository. Release DMG must exist before publishing new feed. Root `LICENSE` is MIT, copyright 2026 Iori Mizutani; bundled Sparkle retains its separate attribution. No application CI workflow or public product screenshot is present.
 
 Owner authorized first publication on 2026-10-09 after repository rename. Tag `v0.4.0` targets approved implementation `bf0b42db6881c53a51a105080b1530a1b657e697`. Public DMG SHA-256 is `0fa08da8b2423fc38ece147c7f970487de5ac9b05d59a036d06eb2471fcd9015`; downloaded bytes matched locally. HTTPS appcast contains only build 5; enclosure size, URL, EdDSA signature and tamper rejection passed. Pages deploys from `gh-pages` root with HTTPS enforced. This records publication verification, not a successful future update installation or trusted notarized distribution.
 
@@ -103,7 +105,7 @@ Distribution remains development-signed, not Developer ID signed/notarized. Do n
 
 For each future release, update SemVer/build only in `Resources/Info.plist`; Sparkle orders independent increasing build numbers. Preserve existing candidates before running scripts that refuse overwrites. Package read-only UDZO containing only app and Applications symlink; outer bundle allowlist excludes stores, secrets and signing tools. Keep exact earlier DMGs under the application's archive directory; pass the previous published feed explicitly to `Scripts/generate-appcast.sh previous-appcast.xml`. Feed preflight limits repository identity; merge preserves older enclosures/signatures/URLs and rejects non-older builds. CryptoKit independently verifies each enclosure plus tamper rejection. `--distribution-check` exits before clipboard, hotkeys, event loop or update requests; it is not an installation test.
 
-After separate publication approval: commit/push accepted source and tag, upload exact validated DMG, download/compare public SHA-256, then deploy only generated `appcast.xml` and `.nojekyll` from a separate publishing checkout to `gh-pages` root with HTTPS. Resolve existing endpoint preservation before repository/Pages changes. Verify live XML, enclosure signatures and artifact bytes before owner tests actual update download/install/relaunch. Never force-push publishing history, replace published assets, or report local feed/diagnostic validation as successful OTA.
+Owner-approved PR merge also authorizes the version/build bump, release commit/push, tag, GitHub Release/assets and Sparkle appcast publication. Follow the continuous merge-to-release workflow in `AGENTS.md` without a separate publication approval round, unless the owner explicitly holds or limits the release. Commit/push accepted release metadata and tag, upload exact validated DMG, download/compare public SHA-256, then deploy only generated `appcast.xml` and `.nojekyll` from a separate publishing checkout to `gh-pages` root with HTTPS. Resolve existing endpoint preservation before repository/Pages changes. Verify live XML, enclosure signatures and artifact bytes before owner tests actual update download/install/relaunch. Never force-push publishing history, replace published assets, or report local feed/diagnostic validation as successful OTA.
 
 ## HAT gate
 
@@ -111,6 +113,6 @@ Owner completed v0.5.0/build 7 HAT: **PASS** (Manager Delete key, storage usage 
 
 Owner completed replacement v0.4.1/build 6 HAT: **PASS**, and authorized commit, push, tag, GitHub Release and Pages appcast publication on 2026-10-10. Approved modern Finder catalog/artwork/runtime switching; original Manager proportions/row/star appearance, stable favorite-action width, horizontal/vertical/diagonal resizing and divider dragging; successful Manager copy/plain and Picker paste promotion, metadata preservation, persistent order and no duplicates. Rejected split-controller implementation is absent. Automated regression coverage also checks search, Favorites, selection/navigation, failure paths and monitor deduplication. Publish the verified DMG before updating the feed, retaining v0.4.0's valid enclosure. This HAT approval does not imply Developer ID signing, notarization or verified OTA installation.
 
-Future HAT uses a fresh writable bundle and disposable `THECLIPBOARD_SUPPORT_DIRECTORY`; this isolates clips, not same-account preferences/TCC. Owner quits other copies before launching to avoid hotkey conflicts; tooling never quits/replaces installations or resets defaults/TCC. Check version/build, original proportions/row/star appearance, selection/type/favorite stability, all resize directions and divider dragging; search/Favorites/keyboard navigation; copy/plain/paste promotion, relaunch order/no duplicates; the single new icon in Finder/Dock/About, absence of icon selection, picker Normal/Favorites opening and bidirectional Option-Command-C toggling, clipboard workflows and paste authorization. Owner confirmed the favorite-picker build before icon replacement; new icon appearance still needs HAT. Keep automatic-check preferences intact and never assume designated-requirement equality proves TCC continuity. Preserve previous candidates and require explicit owner approval before publication.
+Future HAT uses a fresh writable bundle and disposable `THECLIPBOARD_SUPPORT_DIRECTORY`; this isolates clips, not same-account preferences/TCC. Owner quits other copies before launching to avoid hotkey conflicts; tooling never quits/replaces installations or resets defaults/TCC. Check version/build, original proportions/row/star appearance, selection/type/favorite stability, all resize directions and divider dragging; search/Favorites/keyboard navigation; copy/plain/paste promotion, relaunch order/no duplicates; the single new icon in Finder/Dock/About, absence of icon selection, picker Normal/Favorites opening and bidirectional Option-Command-C toggling, clipboard workflows and paste authorization. Owner confirmed the favorite-picker build and subsequently approved the combined picker/icon changes and PR #3 merge. This records acceptance, not verified OTA installation. Keep automatic-check preferences intact and never assume designated-requirement equality proves TCC continuity. Preserve previous candidates. Merge approval covers accepted behavior/artwork; metadata-only release rebuilds need automated validation, not renewed owner approval. Stop for new functional changes or validation failures.
 
-Owner completed and approved v0.4.0/build 5 HAT, including final README and MIT License, and authorized the rebrand commit. Future candidates still follow the checks above. No push, tag, repository rename, Release, feed/Pages publication, installation removal or history rewrite without separate explicit approval. This document is the single source of truth for development and release procedures.
+Owner completed and approved v0.4.0/build 5 HAT, including final README and MIT License, and authorized the rebrand commit. Future candidates still follow the checks above. Release commit/push, tag, Release/assets and feed/Pages publication are authorized by owner-approved PR merge under `AGENTS.md`. Repository rename, deletion/replacement of published artifacts, installation removal, history rewrite and signing-key provisioning/replacement still require separate explicit approval. `AGENTS.md` governs authorization and workflow; this document supplies development and release procedures.

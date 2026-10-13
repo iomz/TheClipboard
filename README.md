@@ -35,7 +35,7 @@ Type in the picker to search. Favorites mode shows only favorited entries. Switc
 
 ## 📦 Download
 
-Requires **macOS 26+ and Apple Silicon**. Download [The Clipboard v0.5.0](https://github.com/iomz/TheClipboard/releases/download/v0.5.0/TheClipboard-0.5.0-arm64.dmg), or browse [Releases](https://github.com/iomz/TheClipboard/releases). To build from source, see the [build instructions](DEVELOPMENT.md).
+Requires **macOS 26+ and Apple Silicon**. Download [The Clipboard v0.6.0](https://github.com/iomz/TheClipboard/releases/download/v0.6.0/TheClipboard-0.6.0-arm64.dmg), or browse [Releases](https://github.com/iomz/TheClipboard/releases). To build from source, see the [build instructions](DEVELOPMENT.md).
 
 🪴 A fresh application identity with its own clips, favorites and settings. No data or preferences are imported from another app. Allow Accessibility for **The Clipboard** when prompted to paste into other apps.
 
