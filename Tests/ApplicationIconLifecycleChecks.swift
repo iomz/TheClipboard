@@ -12,10 +12,9 @@ private final class IconLaunchProbe: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let defaults = UserDefaults(suiteName: suite)!
         let saved = CommandLine.arguments[1]
-        if saved != "fresh" { defaults.set(saved, forKey: ApplicationIconController.preferenceKey) }
-        controller = ApplicationIconController(defaults: defaults)
-        let expected: ApplicationIcon = saved == "lagoon" ? .lagoon : .dustlight
-        precondition(controller.selected == expected)
+        if saved != "fresh" { defaults.set(saved, forKey: "ApplicationIconSelection") }
+        controller = ApplicationIconController()
+        precondition(controller.image != nil)
         let selectedFingerprint = fingerprint()
         precondition(NSApp.setActivationPolicy(.regular))
         // Exercise a late publisher during launch, then the actual main queue.
@@ -25,17 +24,12 @@ private final class IconLaunchProbe: NSObject, NSApplicationDelegate {
         controller.scheduleReapplication()
         DispatchQueue.main.async {
             precondition(fingerprint() == selectedFingerprint, "Launch overwrite was not repaired")
-            precondition(self.controller.selected == expected)
-            precondition(defaults.string(forKey: ApplicationIconController.preferenceKey) == (saved == "fresh" ? nil : saved))
+            precondition(defaults.string(forKey: "ApplicationIconSelection") == (saved == "fresh" ? nil : saved))
             self.controller.scheduleReapplication()
-            let next: ApplicationIcon = expected == .dustlight ? .lagoon : .dustlight
-            precondition(self.controller.select(next))
-            let nextFingerprint = fingerprint()
             DispatchQueue.main.async {
-                precondition(self.controller.selected == next && fingerprint() == nextFingerprint,
-                    "Queued startup application reverted runtime choice")
+                precondition(fingerprint() == selectedFingerprint, "Single icon changed after lifecycle callback")
                 defaults.removePersistentDomain(forName: self.suite)
-                print("Real AppKit launch probe passed: \(saved), policy transition, deferred overwrite repair and runtime-choice race guard. Dock visual HAT remains required.")
+                print("Real AppKit launch probe passed: \(saved), single icon, policy transition and deferred overwrite repair. Dock visual HAT remains required.")
                 fflush(stdout)
                 exit(0)
             }

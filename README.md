@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Resources/Artwork/Dustlight.png" width="128" height="128" alt="The Clipboard — Dustlight icon">
+  <img src="Resources/Artwork/AppIcon.png" width="128" height="128" alt="The Clipboard icon">
 </p>
 <h1 align="center">The Clipboard</h1>
 <p align="center">📋 Copy now. Find it later. A little clipboard companion for macOS.</p>
@@ -17,7 +17,6 @@
 - 🔎 Search past clips and browse them in History Manager.
 - ⭐ Favorite the things you reach for most.
 - 🦋 Sparkle updates, right from the menu bar.
-- 🌈 Switch between Dustlight and Lagoon application icons from the menu bar. Your choice sticks across launches.
 
 ## ⌨️ Your shortcuts
 

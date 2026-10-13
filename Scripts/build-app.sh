@@ -19,8 +19,7 @@ mkdir -p "$APP/Contents/Frameworks"
 ditto "$FRAMEWORK" "$APP/Contents/Frameworks/Sparkle.framework"
 mkdir -p "$APP/Contents/Resources"
 cp "$ROOT/.build/artifacts/sparkle/Sparkle/LICENSE" "$APP/Contents/Resources/Sparkle-LICENSE.txt"
-"$ROOT/Scripts/generate-icon.sh" "$APP/Contents/Resources/Dustlight.icns"
-"$ROOT/Scripts/generate-icon.sh" "$APP/Contents/Resources/Lagoon.icns" Lagoon
+"$ROOT/Scripts/generate-icon.sh" "$APP/Contents/Resources/AppIcon.icns"
 "$ROOT/Scripts/compile-finder-icon.sh" "$APP/Contents/Resources/Assets.car"
 
 # Prefer a stable local Apple Development identity when one is unambiguous.

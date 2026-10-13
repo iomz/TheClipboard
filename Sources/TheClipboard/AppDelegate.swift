@@ -73,13 +73,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         let expectedInterval = (UserDefaults.standard.object(forKey: "SUScheduledCheckInterval") as? NSNumber)?.doubleValue
             ?? (Bundle.main.object(forInfoDictionaryKey: "SUScheduledCheckInterval") as? NSNumber)?.doubleValue
         print("Running bundle: \(Bundle.main.bundleURL.path); version \(information.version), build \(information.build)")
-        print("Application icon: \(iconController.selected.title)")
+        print("Application icon: AppIcon")
         print("Automatic checks: \(updaterController.updater.automaticallyChecksForUpdates); interval: \(updaterController.updater.updateCheckInterval); background downloads: \(updaterController.updater.automaticallyDownloadsUpdates)")
-        return statusItem.menu?.items.filter { $0.title == "Application Icon" }.count == 1
-            && iconController.menu.items.count == 2
-            && iconController.menu.items.filter { $0.state == .on }.count == 1
-            && iconController.selected.rawValue == (UserDefaults.standard.string(forKey: ApplicationIconController.preferenceKey) ?? "dustlight")
-            && iconController.selectedImage != nil
+        return statusItem.menu?.items.contains { $0.title == "Application Icon" } == false
+            && iconController.image != nil
             && updaterController.updater.canCheckForUpdates
             && about?.target === self
             && about?.action == #selector(showAbout)
@@ -186,7 +183,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         menu.items.forEach { $0.target = self }
         menu.insertItem(updateMenuItem(), at: menu.items.count - 1)
         menu.insertItem(automaticChecksMenuItem(), at: menu.items.count - 1)
-        menu.insertItem(iconController.menuItem(), at: menu.items.count - 1)
         statusItem.menu = menu
     }
 
@@ -261,7 +257,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
 
     @objc private func showAbout() {
         var options = AboutInformation().panelOptions
-        if let image = iconController.selectedImage { options[.applicationIcon] = image }
+        if let image = iconController.image { options[.applicationIcon] = image }
         NSApp.orderFrontStandardAboutPanel(options: options)
     }
 
