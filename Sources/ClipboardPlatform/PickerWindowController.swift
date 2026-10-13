@@ -19,6 +19,11 @@ public struct PickerBadgePreviewState {
     }
 }
 
+public enum PickerMode {
+    case normal
+    case favorite
+}
+
 public enum PickerShortcut {
     public static func opensHistoryManager(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, pickerIsKey: Bool) -> Bool {
         let shortcutModifiers = modifiers.intersection([.command, .shift, .control, .option])
@@ -38,6 +43,7 @@ public final class PickerWindowController: NSObject, NSWindowDelegate, NSTableVi
     private let tableView = NSTableView()
     private let countLabel = NSTextField(labelWithString: "")
     private var rows: [ClipboardEntry] = []
+    public private(set) var mode: PickerMode = .normal
     var destinationApplication: NSRunningApplication?
     // Internal seams let regression tests exercise the real handoff/failure
     // path without requesting permissions, activating apps or posting keys.
@@ -103,17 +109,36 @@ public final class PickerWindowController: NSObject, NSWindowDelegate, NSTableVi
         removeKeyMonitor()
     }
 
-    public func show() {
+    /// Carbon handles this shortcut globally, including while the panel is open.
+    public func handleFavoriteShortcut() {
+        if panel.isVisible {
+            setMode(mode == .normal ? .favorite : .normal)
+        } else {
+            show(mode: .favorite)
+        }
+    }
+
+    func setMode(_ mode: PickerMode, preservingSelection: Bool = true) {
+        self.mode = mode
+        searchField.placeholderString = mode == .favorite ? "Search favorite clips" : "Search saved clips"
+        reloadRows(query: searchField.stringValue, preservingSelection: preservingSelection)
+    }
+
+    public func show(mode: PickerMode = .normal) {
+        if panel.isVisible {
+            setMode(mode)
+            return
+        }
         let frontmost = NSWorkspace.shared.frontmostApplication
         destinationApplication = frontmost?.processIdentifier == NSRunningApplication.current.processIdentifier
             ? lastExternalApplication : frontmost
         badgePreview.reset()
         badgePreview.updateShift(isDown: NSEvent.modifierFlags.contains(.shift))
         Self.pasteLogger.info("picker opened destinationPID=\(self.destinationApplication?.processIdentifier ?? 0, privacy: .public) frontmostWasSelf=\(frontmost?.processIdentifier == NSRunningApplication.current.processIdentifier, privacy: .public)")
-        reloadRows()
+        searchField.stringValue = ""
+        setMode(mode, preservingSelection: false)
         positionNearPointer()
         panel.makeKeyAndOrderFront(nil)
-        searchField.stringValue = ""
         searchField.becomeFirstResponder()
         installKeyMonitor()
     }
@@ -197,14 +222,17 @@ public final class PickerWindowController: NSObject, NSWindowDelegate, NSTableVi
         let selectedID = preservingSelection && rows.indices.contains(tableView.selectedRow)
             ? rows[tableView.selectedRow].id : nil
         let previousRow = tableView.selectedRow
-        rows = history.search(query)
+        rows = history.search(query).filter { mode == .normal || $0.isFavorite }
         tableView.reloadData()
-        countLabel.stringValue = "\(rows.count) items · Return to paste · ⇧Return plain · ⇧⌘Space Manager"
+        let modeLabel = mode == .favorite ? "Favorites" : "Normal"
+        countLabel.stringValue = "\(modeLabel) · \(rows.count) items · ⌥⌘C switch · ↵ paste · ⇧↵ plain · ⇧⌘Space Manager"
         if let selectedID, let index = rows.firstIndex(where: { $0.id == selectedID }) {
             tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
             if index != previousRow { tableView.scrollRowToVisible(index) }
         } else if !rows.isEmpty {
             tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+        } else {
+            tableView.deselectAll(nil)
         }
     }
 

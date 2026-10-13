@@ -23,7 +23,8 @@
 
 | Shortcut         | Action                                                    |
 | ---------------- | --------------------------------------------------------- |
-| ⌥⌘V              | Open the picker                                           |
+| ⌥⌘V              | Open the picker in Normal mode                            |
+| ⌥⌘C              | Open Favorites; toggle modes while the picker is open      |
 | ⌃N / ⌃P or ↓ / ↑ | Move through picker results                               |
 | Return           | Paste the selected clip                                   |
 | ⇧Return          | Paste the selected clip as plain text, when available     |
@@ -31,7 +32,7 @@
 | ⇧⌘Space          | Open History Manager from the picker                      |
 | Esc              | Dismiss the picker                                        |
 
-Type in the picker to search. If macOS input-source shortcuts intercept ⇧⌘Space, use **Open History Manager…** from the menu bar.
+Type in the picker to search. Favorites mode shows only favorited entries. Switching modes keeps your search and paste destination. If a picker shortcut is unavailable, use **Open Fast Picker…** or **Open Favorite Picker…** from the menu bar. If macOS input-source shortcuts intercept ⇧⌘Space, use **Open History Manager…** from the menu bar.
 
 ## 📦 Download
 

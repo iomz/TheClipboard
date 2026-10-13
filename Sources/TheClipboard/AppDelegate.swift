@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
     private var picker: PickerWindowController!
     private var historyManager: HistoryManagerWindowController!
     private var pickerHotkey: GlobalHotkey?
+    private var favoritePickerHotkey: GlobalHotkey?
     private var plainTextPasteHotkey: GlobalHotkey?
     private var feedbackTimer: Timer?
     private var updaterController: SPUStandardUpdaterController!
@@ -134,9 +135,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
             plainTextPasteHotkey = GlobalHotkey(id: 2, keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
                 self?.pasteCurrentClipboardAsPlainText()
             }
+            favoritePickerHotkey = GlobalHotkey(id: 3, keyCode: UInt32(kVK_ANSI_C), modifiers: UInt32(cmdKey | optionKey)) { [weak self] in
+                self?.picker.handleFavoriteShortcut()
+            }
             let pickerStatus = pickerHotkey?.register() ?? OSStatus(paramErr)
             let plainTextStatus = plainTextPasteHotkey?.register() ?? OSStatus(paramErr)
-            if pickerStatus != noErr || plainTextStatus != noErr {
+            let favoritePickerStatus = favoritePickerHotkey?.register() ?? OSStatus(paramErr)
+            if pickerStatus != noErr || plainTextStatus != noErr || favoritePickerStatus != noErr {
                 statusItem.button?.toolTip = "The Clipboard · Use menu to open (shortcut unavailable)"
             }
 
@@ -163,6 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
     func applicationWillTerminate(_ notification: Notification) {
         capture?.stop()
         pickerHotkey?.unregister()
+        favoritePickerHotkey?.unregister()
         plainTextPasteHotkey?.unregister()
     }
 
@@ -172,6 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         statusItem.button?.toolTip = "The Clipboard · ⌥⌘V"
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Open Fast Picker…", action: #selector(openPicker), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Open Favorite Picker…", action: #selector(openFavoritePicker), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Open History Manager…", action: #selector(openHistoryManager), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Clipboard Representation Report…", action: #selector(showClipboardReport), keyEquivalent: ""))
         menu.addItem(.separator())
@@ -261,6 +268,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     @objc private func openPicker() { picker.show() }
+    @objc private func openFavoritePicker() { picker.show(mode: .favorite) }
     @objc private func openHistoryManager() { historyManager.showManager() }
     @objc private func quit() { NSApp.terminate(nil) }
 
