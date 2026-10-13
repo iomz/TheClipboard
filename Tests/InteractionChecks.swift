@@ -22,7 +22,7 @@ enum InteractionChecks {
         let history = ClipboardLibrary(store: try FileEntryStore(root: root))
         let entry = ClipboardEntry(pasteboardItems: [.init(ordinal: 0, representations: [
             .init(typeIdentifier: "public.utf8-plain-text", data: Data("Disposable favorite fixture".utf8))
-        ])])
+        ])], plainText: "Disposable favorite fixture")
         try history.capture(entry)
         let board = NSPasteboard(name: .init("com.iomz.TheClipboard.Test.Interaction.\(UUID().uuidString)"))
         defer { board.clearContents() }
@@ -88,7 +88,7 @@ enum InteractionChecks {
         // Delete key removes the selected entry; modified Delete does not.
         let second = ClipboardEntry(pasteboardItems: [.init(ordinal: 0, representations: [
             .init(typeIdentifier: "public.utf8-plain-text", data: Data("Second disposable fixture".utf8))
-        ])])
+        ])], plainText: "Second disposable fixture")
         try history.capture(second)
         precondition(storage.stringValue.hasPrefix("2 items · "), storage.stringValue)
         func key(_ code: UInt16, _ flags: NSEvent.ModifierFlags = []) -> NSEvent {
@@ -105,6 +105,53 @@ enum InteractionChecks {
         table.keyDown(with: key(117))
         precondition(history.allEntries().isEmpty && table.selectedRow == -1 && storage.stringValue.hasPrefix("0 items · "))
         precondition(!manager.window!.isVisible, "Tests must not activate a Manager window")
-        print("Interaction checks passed: picker-only shortcut/handoff without paste; favorite button and row star, persistence, SF Symbol, accessibility and selection tint; storage summary; Delete key removal.")
+
+        // Exercise the same entry point used by the global favorite hotkey.
+        try history.capture(entry)
+        try history.capture(second)
+        try history.setFavorite(true, for: entry.id)
+        let pickerViews = descendants(picker.panel.contentView!)
+        let pickerTable = pickerViews.compactMap { $0 as? NSTableView }.first!
+        let pickerSearch = pickerViews.compactMap { $0 as? NSSearchField }.first!
+        func pickerText(_ row: Int) -> String {
+            let cell = picker.tableView(pickerTable, viewFor: pickerTable.tableColumns[0], row: row)!
+            return descendants(cell).compactMap { $0 as? NSTextField }.map(\.stringValue).joined(separator: " ")
+        }
+        let pickerChangeCount = board.changeCount
+        picker.handleFavoriteShortcut()
+        precondition(picker.panel.isVisible && picker.mode == .favorite)
+        precondition(pickerTable.numberOfRows == 1 && pickerText(0).contains(entry.preview))
+        precondition(pickerSearch.stringValue.isEmpty && pickerSearch.placeholderString == "Search favorite clips")
+        picker.destinationApplication = NSRunningApplication.current
+        pickerSearch.stringValue = "Disposable"
+        picker.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification))
+        picker.handleFavoriteShortcut()
+        precondition(picker.mode == .normal && pickerTable.numberOfRows == 2)
+        precondition(pickerText(pickerTable.selectedRow).contains(entry.preview), "Keep selected favorite across mode switch")
+        precondition(picker.destinationApplication?.processIdentifier == NSRunningApplication.current.processIdentifier && pickerSearch.stringValue == "Disposable")
+        picker.handleFavoriteShortcut()
+        precondition(picker.mode == .favorite && pickerTable.numberOfRows == 1)
+        pickerSearch.stringValue = "Second"
+        picker.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification))
+        precondition(pickerTable.numberOfRows == 0 && pickerTable.selectedRow == -1)
+        picker.handleFavoriteShortcut()
+        precondition(picker.mode == .normal && pickerTable.numberOfRows == 1 && pickerText(0).contains(second.preview))
+        picker.handleFavoriteShortcut()
+        precondition(picker.mode == .favorite && pickerTable.numberOfRows == 0)
+        try history.setFavorite(true, for: second.id)
+        precondition(pickerTable.numberOfRows == 1 && pickerText(0).contains(second.preview), "Live favorite changes respect search")
+        try history.setFavorite(false, for: second.id)
+        precondition(pickerTable.numberOfRows == 0 && pickerTable.selectedRow == -1)
+        picker.show()
+        precondition(picker.mode == .normal && pickerSearch.stringValue == "Second")
+        picker.openHistoryManagerFromPicker()
+        picker.show()
+        precondition(picker.mode == .normal && pickerSearch.stringValue.isEmpty && pickerTable.numberOfRows == 2)
+        picker.openHistoryManagerFromPicker()
+        picker.handleFavoriteShortcut()
+        precondition(picker.mode == .favorite && pickerSearch.stringValue.isEmpty && pickerTable.numberOfRows == 1)
+        picker.openHistoryManagerFromPicker()
+        precondition(!picker.panel.isVisible && board.changeCount == pickerChangeCount)
+        print("Interaction checks passed: picker favorite opening/toggle, search/selection/destination preservation, live filtering and fresh openings without clipboard writes; picker-only Manager shortcut/handoff; favorite button and row star, persistence, SF Symbol, accessibility and selection tint; storage summary; Delete key removal.")
     }
 }

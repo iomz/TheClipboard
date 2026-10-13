@@ -8,13 +8,10 @@ func require(_ value: Bool, _ message: String) {
 }
 let args = CommandLine.arguments
 let root = URL(fileURLWithPath: args[1])
-let design = args.count > 4 ? args[4] : "Dustlight"
-let master = root.appendingPathComponent("Resources/Artwork/\(design).png")
+let master = root.appendingPathComponent("Resources/Artwork/AppIcon.png")
 let masterData = try Data(contentsOf: master)
 let digest = SHA256.hash(data: masterData).map { String(format: "%02x", $0) }.joined()
-let expectedHashes = ["Dustlight": "9b1d66498f16d2ee08b80ed2ad7edc46cd0a1641d66f3d4e37d0f51051751465",
-                      "Lagoon": "e9da133c0943fc1f35537d3b14eb99a684f36d0cd2e81a609b1700dba8b44885"]
-require(digest == expectedHashes[design], "Approved master pixels/file changed")
+require(digest == "df55707e5d173611f066daa1c9fc3c04d8c0272c68d46ff401890f154f247c94", "Approved master pixels/file changed")
 let masterSource = CGImageSourceCreateWithData(masterData as CFData, nil)!
 let masterImage = CGImageSourceCreateImageAtIndex(masterSource, 0, nil)!
 require(masterImage.width == 1254 && masterImage.height == 1254, "Master dimensions changed")
@@ -49,10 +46,9 @@ for (name, size) in representations {
 if args.count > 3 {
     let app = URL(fileURLWithPath: args[3])
     let info = try PropertyListSerialization.propertyList(from: Data(contentsOf: app.appendingPathComponent("Contents/Info.plist")), format: nil) as! [String: Any]
-    require(info["CFBundleIconFile"] as? String == "Dustlight.icns", "Icon metadata missing")
-    require(info["CFBundleIconName"] as? String == "Dustlight", "Modern Finder icon metadata missing")
-    let resource = design == "Dustlight" ? "Dustlight" : "Lagoon"
-    let url = app.appendingPathComponent("Contents/Resources/\(resource).icns")
+    require(info["CFBundleIconFile"] as? String == "AppIcon.icns", "Icon metadata missing")
+    require(info["CFBundleIconName"] as? String == "AppIcon", "Modern Finder icon metadata missing")
+    let url = app.appendingPathComponent("Contents/Resources/AppIcon.icns")
     let icon = NSImage(contentsOf: url)!
     require(icon.isValid, "AppKit cannot load icon")
     let finderIcon = NSWorkspace.shared.icon(forFile: app.path)

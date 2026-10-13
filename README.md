@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Resources/Artwork/Dustlight.png" width="128" height="128" alt="The Clipboard — Dustlight icon">
+  <img src="Resources/Artwork/AppIcon.png" width="128" height="128" alt="The Clipboard icon">
 </p>
 <h1 align="center">The Clipboard</h1>
 <p align="center">📋 Copy now. Find it later. A little clipboard companion for macOS.</p>
@@ -17,13 +17,13 @@
 - 🔎 Search past clips and browse them in History Manager.
 - ⭐ Favorite the things you reach for most.
 - 🦋 Sparkle updates, right from the menu bar.
-- 🌈 Switch between Dustlight and Lagoon application icons from the menu bar. Your choice sticks across launches.
 
 ## ⌨️ Your shortcuts
 
 | Shortcut         | Action                                                    |
 | ---------------- | --------------------------------------------------------- |
-| ⌥⌘V              | Open the picker                                           |
+| ⌥⌘V              | Open the picker in Normal mode                            |
+| ⌥⌘C              | Open Favorites; toggle modes while the picker is open      |
 | ⌃N / ⌃P or ↓ / ↑ | Move through picker results                               |
 | Return           | Paste the selected clip                                   |
 | ⇧Return          | Paste the selected clip as plain text, when available     |
@@ -31,7 +31,7 @@
 | ⇧⌘Space          | Open History Manager from the picker                      |
 | Esc              | Dismiss the picker                                        |
 
-Type in the picker to search. If macOS input-source shortcuts intercept ⇧⌘Space, use **Open History Manager…** from the menu bar.
+Type in the picker to search. Favorites mode shows only favorited entries. Switching modes keeps your search and paste destination. If a picker shortcut is unavailable, use **Open Fast Picker…** or **Open Favorite Picker…** from the menu bar. If macOS input-source shortcuts intercept ⇧⌘Space, use **Open History Manager…** from the menu bar.
 
 ## 📦 Download
 

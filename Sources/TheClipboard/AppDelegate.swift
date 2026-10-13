@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
     private var picker: PickerWindowController!
     private var historyManager: HistoryManagerWindowController!
     private var pickerHotkey: GlobalHotkey?
+    private var favoritePickerHotkey: GlobalHotkey?
     private var plainTextPasteHotkey: GlobalHotkey?
     private var feedbackTimer: Timer?
     private var updaterController: SPUStandardUpdaterController!
@@ -72,13 +73,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         let expectedInterval = (UserDefaults.standard.object(forKey: "SUScheduledCheckInterval") as? NSNumber)?.doubleValue
             ?? (Bundle.main.object(forInfoDictionaryKey: "SUScheduledCheckInterval") as? NSNumber)?.doubleValue
         print("Running bundle: \(Bundle.main.bundleURL.path); version \(information.version), build \(information.build)")
-        print("Application icon: \(iconController.selected.title)")
+        print("Application icon: AppIcon")
         print("Automatic checks: \(updaterController.updater.automaticallyChecksForUpdates); interval: \(updaterController.updater.updateCheckInterval); background downloads: \(updaterController.updater.automaticallyDownloadsUpdates)")
-        return statusItem.menu?.items.filter { $0.title == "Application Icon" }.count == 1
-            && iconController.menu.items.count == 2
-            && iconController.menu.items.filter { $0.state == .on }.count == 1
-            && iconController.selected.rawValue == (UserDefaults.standard.string(forKey: ApplicationIconController.preferenceKey) ?? "dustlight")
-            && iconController.selectedImage != nil
+        return statusItem.menu?.items.contains { $0.title == "Application Icon" } == false
+            && iconController.image != nil
             && updaterController.updater.canCheckForUpdates
             && about?.target === self
             && about?.action == #selector(showAbout)
@@ -134,9 +132,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
             plainTextPasteHotkey = GlobalHotkey(id: 2, keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
                 self?.pasteCurrentClipboardAsPlainText()
             }
+            favoritePickerHotkey = GlobalHotkey(id: 3, keyCode: UInt32(kVK_ANSI_C), modifiers: UInt32(cmdKey | optionKey)) { [weak self] in
+                self?.picker.handleFavoriteShortcut()
+            }
             let pickerStatus = pickerHotkey?.register() ?? OSStatus(paramErr)
             let plainTextStatus = plainTextPasteHotkey?.register() ?? OSStatus(paramErr)
-            if pickerStatus != noErr || plainTextStatus != noErr {
+            let favoritePickerStatus = favoritePickerHotkey?.register() ?? OSStatus(paramErr)
+            if pickerStatus != noErr || plainTextStatus != noErr || favoritePickerStatus != noErr {
                 statusItem.button?.toolTip = "The Clipboard · Use menu to open (shortcut unavailable)"
             }
 
@@ -163,6 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
     func applicationWillTerminate(_ notification: Notification) {
         capture?.stop()
         pickerHotkey?.unregister()
+        favoritePickerHotkey?.unregister()
         plainTextPasteHotkey?.unregister()
     }
 
@@ -172,6 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         statusItem.button?.toolTip = "The Clipboard · ⌥⌘V"
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Open Fast Picker…", action: #selector(openPicker), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Open Favorite Picker…", action: #selector(openFavoritePicker), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Open History Manager…", action: #selector(openHistoryManager), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Clipboard Representation Report…", action: #selector(showClipboardReport), keyEquivalent: ""))
         menu.addItem(.separator())
@@ -179,7 +183,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
         menu.items.forEach { $0.target = self }
         menu.insertItem(updateMenuItem(), at: menu.items.count - 1)
         menu.insertItem(automaticChecksMenuItem(), at: menu.items.count - 1)
-        menu.insertItem(iconController.menuItem(), at: menu.items.count - 1)
         statusItem.menu = menu
     }
 
@@ -254,13 +257,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, 
 
     @objc private func showAbout() {
         var options = AboutInformation().panelOptions
-        if let image = iconController.selectedImage { options[.applicationIcon] = image }
+        if let image = iconController.image { options[.applicationIcon] = image }
         NSApp.orderFrontStandardAboutPanel(options: options)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     @objc private func openPicker() { picker.show() }
+    @objc private func openFavoritePicker() { picker.show(mode: .favorite) }
     @objc private func openHistoryManager() { historyManager.showManager() }
     @objc private func quit() { NSApp.terminate(nil) }
 

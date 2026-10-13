@@ -13,8 +13,7 @@ WORK=$(mktemp -d "${TMPDIR:-/tmp}/TheClipboard-icon-launch.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT HUP INT TERM
 FIXTURE="$WORK/Icon Launch Probe.app"
 mkdir -p "$FIXTURE/Contents/MacOS" "$FIXTURE/Contents/Resources"
-cp "$APP/Contents/Resources/Dustlight.icns" "$FIXTURE/Contents/Resources/"
-cp "$APP/Contents/Resources/Lagoon.icns" "$FIXTURE/Contents/Resources/"
+cp "$APP/Contents/Resources/AppIcon.icns" "$FIXTURE/Contents/Resources/"
 cat > "$FIXTURE/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -22,7 +21,7 @@ cat > "$FIXTURE/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIdentifier</key><string>com.iomz.TheClipboard.Test.IconLaunch</string>
 <key>CFBundleExecutable</key><string>IconLaunchProbe</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleIconFile</key><string>Dustlight.icns</string>
+<key>CFBundleIconFile</key><string>AppIcon.icns</string>
 <key>LSUIElement</key><true/>
 </dict></plist>
 PLIST

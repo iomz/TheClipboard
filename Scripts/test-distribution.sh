@@ -17,6 +17,7 @@ swiftc "$ROOT/Tests/DistributionChecks.swift" -o "$ROOT/build/tests/distribution
 "$ROOT/build/tests/distribution-checks" "$ROOT/Resources/Info.plist" "$APP" "${2:-}" "${3:-}"
 # This explicit diagnostic exits before capture, history, hotkeys or event loop.
 # Argument-domain overrides are non-persistent and do not change installed app
-# preferences. Test both choices without starting the run loop/network schedule.
+# preferences. Test automatic checks and ignored legacy icon selections without
+# starting the run loop/network schedule.
 "$APP/Contents/MacOS/TheClipboard" --distribution-check -SUEnableAutomaticChecks NO -SUScheduledCheckInterval 86400 -ApplicationIconSelection dustlight
 "$APP/Contents/MacOS/TheClipboard" --distribution-check -SUEnableAutomaticChecks YES -SUScheduledCheckInterval 86400 -ApplicationIconSelection lagoon

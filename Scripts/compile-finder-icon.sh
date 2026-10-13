@@ -19,17 +19,17 @@ fi
 xcrun --find actool >/dev/null
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/TheClipboard-finder-icon.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT HUP INT TERM
-mkdir -p "$WORK/Dustlight.icon/Assets" "$WORK/compiled" "$(dirname -- "$OUT")"
-cp "$ROOT/Resources/Dustlight.icon/icon.json" "$WORK/Dustlight.icon/icon.json"
+mkdir -p "$WORK/AppIcon.icon/Assets" "$WORK/compiled" "$(dirname -- "$OUT")"
+cp "$ROOT/Resources/AppIcon.icon/icon.json" "$WORK/AppIcon.icon/icon.json"
 # Import exact approved master; no recoloring, alpha filtering or source edits.
-cp "$ROOT/Resources/Artwork/Dustlight.png" "$WORK/Dustlight.icon/Assets/Dustlight.png"
-cmp "$ROOT/Resources/Artwork/Dustlight.png" "$WORK/Dustlight.icon/Assets/Dustlight.png"
-xcrun actool "$WORK/Dustlight.icon" --app-icon Dustlight \
+cp "$ROOT/Resources/Artwork/AppIcon.png" "$WORK/AppIcon.icon/Assets/AppIcon.png"
+cmp "$ROOT/Resources/Artwork/AppIcon.png" "$WORK/AppIcon.icon/Assets/AppIcon.png"
+xcrun actool "$WORK/AppIcon.icon" --app-icon AppIcon \
   --compile "$WORK/compiled" --output-partial-info-plist "$WORK/generated.plist" \
   --minimum-deployment-target 26.0 --platform macosx --target-device mac
-test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' "$WORK/generated.plist")" = Dustlight
-# Keep original deterministic ICNS files for runtime switching and fallback.
+test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' "$WORK/generated.plist")" = AppIcon
+# Keep deterministic ICNS for the running app and fallback.
 # Do not ship actool's generated replacement ICNS or the authoring document.
 cp -n "$WORK/compiled/Assets.car" "$OUT"
 cmp "$WORK/compiled/Assets.car" "$OUT"
-echo "Compiled modern Finder icon catalog from unchanged Dustlight master."
+echo "Compiled modern Finder icon catalog from unchanged AppIcon master."

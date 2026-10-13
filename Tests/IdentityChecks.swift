@@ -19,10 +19,10 @@ import Foundation
         let defaults = UserDefaults(suiteName: domain)!
         defer { defaults.removePersistentDomain(forName: domain) }
         precondition(defaults.object(forKey: "SUEnableAutomaticChecks") == nil)
-        precondition(defaults.object(forKey: ApplicationIconController.preferenceKey) == nil)
-        let icons = ApplicationIconController(defaults: defaults, bundle: bundle, applyImage: { _ in })
-        precondition(icons.selected == .dustlight)
-        precondition(defaults.object(forKey: ApplicationIconController.preferenceKey) == nil)
-        print("Identity checks passed: bundle/executable/About, fresh TheClipboard storage/defaults and Dustlight default.")
+        precondition(defaults.object(forKey: "ApplicationIconSelection") == nil)
+        let icons = ApplicationIconController(bundle: bundle, applyImage: { _ in })
+        precondition(icons.image != nil)
+        precondition(defaults.object(forKey: "ApplicationIconSelection") == nil)
+        print("Identity checks passed: bundle/executable/About, fresh TheClipboard storage/defaults and single application icon.")
     }
 }

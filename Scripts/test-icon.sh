@@ -5,14 +5,10 @@ VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT/
 APP=${1:-"$ROOT/build/releases/TheClipboard/$VERSION/The Clipboard.app"}
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/TheClipboard-icon-test.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT HUP INT TERM
-for DESIGN in Dustlight Lagoon; do
-  RESOURCE=Dustlight
-  if [ "$DESIGN" = Lagoon ]; then RESOURCE=Lagoon; fi
-  "$ROOT/Scripts/generate-icon.sh" "$WORK/$DESIGN-first.icns" "$DESIGN"
-  "$ROOT/Scripts/generate-icon.sh" "$WORK/$DESIGN-second.icns" "$DESIGN"
-  cmp "$WORK/$DESIGN-first.icns" "$WORK/$DESIGN-second.icns"
-  cmp "$WORK/$DESIGN-first.icns" "$APP/Contents/Resources/$RESOURCE.icns"
-  iconutil --convert iconset --output "$WORK/$DESIGN.iconset" "$WORK/$DESIGN-first.icns"
-  swift "$ROOT/Tests/IconChecks.swift" "$ROOT" "$WORK/$DESIGN.iconset" "$APP" "$DESIGN"
-done
+"$ROOT/Scripts/generate-icon.sh" "$WORK/AppIcon-first.icns"
+"$ROOT/Scripts/generate-icon.sh" "$WORK/AppIcon-second.icns"
+cmp "$WORK/AppIcon-first.icns" "$WORK/AppIcon-second.icns"
+cmp "$WORK/AppIcon-first.icns" "$APP/Contents/Resources/AppIcon.icns"
+iconutil --convert iconset --output "$WORK/AppIcon.iconset" "$WORK/AppIcon-first.icns"
+swift "$ROOT/Tests/IconChecks.swift" "$ROOT" "$WORK/AppIcon.iconset" "$APP"
 echo "Repeated icon generation matches byte-for-byte, including signed bundle resource."
