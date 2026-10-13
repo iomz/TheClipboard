@@ -14,7 +14,12 @@ import Foundation
         precondition(bundle.bundleIdentifier == "com.iomz.TheClipboard")
         precondition(bundle.object(forInfoDictionaryKey: "CFBundleExecutable") as? String == "TheClipboard")
         let about = AboutInformation(bundle: bundle)
-        precondition(about.applicationName == "The Clipboard" && about.version == "0.5.0" && about.build == "7")
+        let sourceInfo = try PropertyListSerialization.propertyList(
+            from: Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[2])), format: nil
+        ) as! [String: Any]
+        precondition(about.applicationName == "The Clipboard")
+        precondition(about.version == sourceInfo["CFBundleShortVersionString"] as? String)
+        precondition(about.build == sourceInfo["CFBundleVersion"] as? String)
         let domain = "com.iomz.TheClipboard.Test.Identity.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: domain)!
         defer { defaults.removePersistentDomain(forName: domain) }

@@ -10,4 +10,4 @@ swiftc -I "$ROOT/build/tests" -L "$ROOT/build/tests" -lClipboardCore \
   "$ROOT/Sources/TheClipboard/ApplicationIdentity.swift" "$ROOT/Sources/TheClipboard/AboutInformation.swift" \
   "$ROOT/Sources/TheClipboard/ApplicationIconController.swift" \
   "$ROOT/Tests/IdentityChecks.swift" -o "$ROOT/build/tests/identity-checks"
-"$ROOT/build/tests/identity-checks" "$APP"
+"$ROOT/build/tests/identity-checks" "$APP" "$ROOT/Resources/Info.plist"
